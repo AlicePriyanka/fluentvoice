@@ -1,0 +1,9 @@
+1:"$Sreact.fragment"
+2:I[47257,["/fluentvoice-frontend/_next/static/chunks/0f10buuc9p6l8.js","/fluentvoice-frontend/_next/static/chunks/0n4z.7yu76je-.js"],"ClientPageRoot"]
+3:I[38151,["/fluentvoice-frontend/_next/static/chunks/0f10buuc9p6l8.js","/fluentvoice-frontend/_next/static/chunks/0n4z.7yu76je-.js","/fluentvoice-frontend/_next/static/chunks/0bbxb._k_5spi.js","/fluentvoice-frontend/_next/static/chunks/0getnx--xxdy9.js","/fluentvoice-frontend/_next/static/chunks/129t~jog3mk45.js","/fluentvoice-frontend/_next/static/chunks/0ovm86w3frpsa.js"],"default"]
+6:I[97367,["/fluentvoice-frontend/_next/static/chunks/0f10buuc9p6l8.js","/fluentvoice-frontend/_next/static/chunks/0n4z.7yu76je-.js"],"OutletBoundary"]
+7:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/fluentvoice-frontend/_next/static/chunks/0ovm86w3frpsa.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Zh4jG4DPPVsP9X4h7zvUd"}
+4:{}
+5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
+8:null

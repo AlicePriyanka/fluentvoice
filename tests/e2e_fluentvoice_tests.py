@@ -46,7 +46,7 @@ from openpyxl.utils import get_column_letter
 # ──────────────────────────────────────────────────────────────────────────────
 # Configuration
 # ──────────────────────────────────────────────────────────────────────────────
-BASE_URL        = "https://fluentvoice-appv2.vercel.app"
+BASE_URL        = "https://alicepriyanka.github.io/fluentvoice-frontend"
 DEFAULT_TIMEOUT = 10         # seconds
 HEADLESS        = True       # set True to run without a browser window
 SLOW_MO         = 0.3        # seconds between actions

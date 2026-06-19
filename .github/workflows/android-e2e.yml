@@ -1,0 +1,81 @@
+name: Android E2E Tests
+
+on:
+  push:
+    paths:
+      - "fluentvoice/**"
+      - "fluentvoice-appium/**"
+  pull_request:
+    paths:
+      - "fluentvoice/**"
+      - "fluentvoice-appium/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Enable KVM group permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger
+
+      - name: Build Debug APK
+        run: |
+          cd fluentvoice
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Appium and WDIO dependencies
+        run: |
+          cd fluentvoice-appium
+          npm ci
+          # Install UiAutomator2 driver for Appium
+          npx appium driver install uiautomator2 || true
+
+      - name: Run Appium Tests in Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: default
+          arch: x86_64
+          profile: Nexus 6
+          script: |
+            cd fluentvoice-appium
+            export APK_PATH="${{ github.workspace }}/fluentvoice/app/build/outputs/apk/debug/app-debug.apk"
+            chmod +x scripts/ci_run_tests.sh
+            ./scripts/ci_run_tests.sh
+
+      - name: Upload Test Report Excel
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-Appium-Test-Report
+          path: "fluentvoice-appium/artifacts/reports/selenium-report.xlsx"
+
+      - name: Deploy Reports to GitHub Pages
+        if: always()
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: fluentvoice-appium/artifacts/reports
+          target-folder: reports/android/latest
+          commit-message: "deploy: publish latest Android Appium execution reports"
+          clean: false

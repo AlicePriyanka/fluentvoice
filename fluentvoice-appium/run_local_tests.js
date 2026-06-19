@@ -51,6 +51,9 @@ async function sleep(ms) {
 }
 
 async function runTests() {
+  // ── Prepare report directories early ───────────────────────────────────
+  fs.mkdirSync(path.join(__dirname, "artifacts/reports"), { recursive: true });
+
   console.log(`\n${C.bold}${C.cyan}══════════════════════════════════════════════════${C.reset}`);
   console.log(`${C.bold}  🚀 FluentVoice Appium Automated Test Suite${C.reset}`);
   console.log(`${C.bold}${C.cyan}══════════════════════════════════════════════════${C.reset}`);
@@ -74,7 +77,7 @@ async function runTests() {
         const caps = {
           platformName: "Android",
           "appium:deviceName":          isCI ? "Android Emulator" : DEVICE_NAME,
-          "appium:platformVersion":     isCI ? "9.0" : ANDROID_VER,
+          "appium:platformVersion":     isCI ? "10.0" : ANDROID_VER,
           "appium:automationName":      "UiAutomator2",
           "appium:app":                 APK_PATH,
           "appium:autoGrantPermissions": true,
@@ -95,7 +98,6 @@ async function runTests() {
   }
 
   // ── Prepare report directories ─────────────────────────────────────────
-  fs.mkdirSync(path.join(__dirname, "artifacts/reports"), { recursive: true });
   startRun();
   const allResults = [];
   let totalPass = 0, totalFail = 0;

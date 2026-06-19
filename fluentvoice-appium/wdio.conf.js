@@ -13,7 +13,7 @@ exports.config = {
   capabilities: [{
     platformName: 'Android',
     'appium:deviceName': 'Android Emulator',
-    'appium:platformVersion': '9.0',
+    'appium:platformVersion': '10.0',
     'appium:automationName': 'UiAutomator2',
     'appium:app': process.env.APK_PATH || path.join(__dirname, '../fluentvoice/app/build/outputs/apk/debug/app-debug.apk'),
     'appium:autoGrantPermissions': true,

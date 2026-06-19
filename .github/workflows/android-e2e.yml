@@ -1,82 +1,188 @@
-name: Android E2E Tests
+name: 📱 Mobile App — Deploy & Test
 
 on:
   push:
+    branches: ["main", "master"]
     paths:
       - "fluentvoice/**"
       - "fluentvoice-appium/**"
+      - ".github/workflows/android-e2e.yml"
   pull_request:
-    paths:
-      - "fluentvoice/**"
-      - "fluentvoice-appium/**"
+    branches: ["main", "master"]
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: android-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "17"
+  JAVA_DIST: "temurin"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx3g"
 
 jobs:
   android-e2e:
+    name: 📱 Build, Run Appium E2E & Publish Reports
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+
     steps:
-      - name: Checkout repository
+      # ── 1. Source ────────────────────────────────────────────────
+      - name: ⬇️  Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      # ── 2. Java + Gradle ─────────────────────────────────────────
+      - name: ☕  Setup JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: "17"
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DIST }}
+          cache: gradle
 
-      - name: Enable KVM group permissions
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/99-kvm.rules
-          sudo udevadm control --reload-rules && sudo udevadm trigger
+      - name: 🔧  Make Gradlew executable
+        working-directory: fluentvoice
+        run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: |
-          cd fluentvoice
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-
-      - name: Set up Node.js
+      # ── 3. Node (for Appium + WDIO) ──────────────────────────────
+      - name: 🟢  Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fluentvoice-appium/package-lock.json
 
-      - name: Install Appium and WDIO dependencies
+      - name: 📦  Install Appium project dependencies
+        working-directory: fluentvoice-appium
+        run: npm install --legacy-peer-deps
+
+      - name: 📦  Install Appium server globally
+        run: npm install -g appium
+
+      # ── 4. Build APK ─────────────────────────────────────────────
+      - name: 🏗️  Build debug APK
+        working-directory: fluentvoice
         run: |
-          cd fluentvoice-appium
-          npm install --legacy-peer-deps
-          # Install UiAutomator2 driver for Appium globally via npx
-          npx appium driver install uiautomator2 --source=npm || true
+          ./gradlew assembleDebug --no-daemon
+          APK=$(find . -name "app-debug.apk" | head -1)
+          echo "APK_PATH=$(realpath "$APK")" >> "$GITHUB_ENV"
+          echo "✅ APK: $(realpath "$APK")"
 
-      - name: Run Appium Tests in Android Emulator
-        continue-on-error: true
+      # ── 5. KVM hardware acceleration ─────────────────────────────
+      - name: ⚡  Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # ── 6. Appium UiAutomator2 driver ────────────────────────────
+      - name: 🤖  Install Appium UiAutomator2 driver
+        run: appium driver install uiautomator2
+
+      # ── 7. Make the committed CI script executable ────────────────
+      - name: 🔧  Make ci_run_tests.sh executable
+        run: chmod +x fluentvoice-appium/scripts/ci_run_tests.sh
+
+      # ── 8. Boot emulator & run the script ────────────────────────
+      - name: 📱  Boot emulator & run Appium tests
         uses: reactivecircus/android-emulator-runner@v2
+        id: appium_run
+        continue-on-error: true
         with:
           api-level: 29
           target: default
           arch: x86_64
           profile: Nexus 6
-          script: |
-            cd fluentvoice-appium
-            export APK_PATH="${{ github.workspace }}/fluentvoice/app/build/outputs/apk/debug/app-debug.apk"
-            chmod +x scripts/ci_run_tests.sh
-            ./scripts/ci_run_tests.sh || true
+          avd-name: fluentvoice_avd
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash "$GITHUB_WORKSPACE/fluentvoice-appium/scripts/ci_run_tests.sh"
 
-      - name: Upload Test Report Excel
-        uses: actions/upload-artifact@v4
+      # ── 9. Collect and Standardize Test Results ──────────────────
+      - name: 📁  Prepare Test Results Structure
         if: always()
-        with:
-          name: Android-Appium-Test-Report
-          path: "fluentvoice-appium/artifacts/reports/selenium-report.xlsx"
+        run: |
+          mkdir -p "${{ github.workspace }}/Test_Results/Excel"
+          mkdir -p "${{ github.workspace }}/Test_Results/HTML"
+          mkdir -p "${{ github.workspace }}/Test_Results/Screenshots"
+          mkdir -p "${{ github.workspace }}/Test_Results/Logs"
+          mkdir -p "${{ github.workspace }}/Test_Results/Summary"
 
-      - name: Deploy Reports to GitHub Pages
+          # Copy generated reports from Appium artifacts folder if they exist
+          REPORTS="${{ github.workspace }}/fluentvoice-appium/artifacts/reports"
+          [ -f "$REPORTS/selenium-report.xlsx" ] && \
+            cp "$REPORTS/selenium-report.xlsx" \
+               "${{ github.workspace }}/Test_Results/Excel/Automation_Test_Report.xlsx" && \
+            echo "✅ Copied Excel report"
+          [ -f "$REPORTS/execution-report.html" ] && \
+            cp "$REPORTS/execution-report.html" \
+               "${{ github.workspace }}/Test_Results/HTML/execution-report.html" && \
+            echo "✅ Copied HTML report"
+
+          # Generate fallback HTML report if missing
+          if [ ! -f "${{ github.workspace }}/Test_Results/HTML/execution-report.html" ]; then
+            echo "⚠️  HTML report missing — generating fallback..."
+            cd "${{ github.workspace }}/fluentvoice-appium"
+            node utils/generateFallbackReport.js || echo "Fallback report generation attempted"
+            [ -f "artifacts/reports/execution-report.html" ] && \
+              cp "artifacts/reports/execution-report.html" \
+                 "${{ github.workspace }}/Test_Results/HTML/execution-report.html"
+          fi
+
+          # Build Action Summary Markdown
+          STATUS="${{ steps.appium_run.outcome }}"
+          [ "$STATUS" = "success" ] && BADGE="✅ Passed" || BADGE="❌ Failed / Partial"
+          {
+            echo "# 📱 Android Appium Test Summary"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| **Build Number** | ${{ github.run_number }} |"
+            echo "| **Execution Date** | $(date) |"
+            echo "| **Result** | $BADGE |"
+            echo ""
+            echo "📊 **Report URL:**"
+            echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/latest/execution-report.html"
+          } > "${{ github.workspace }}/Test_Results/Summary/summary.md"
+
+      # ── 10. Upload Artifacts ──────────────────────────────────────
+      - name: 📤  Upload Mobile E2E Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FluentVoice-Mobile-E2E-Results-${{ github.run_number }}
+          path: Test_Results/
+          retention-days: 30
+
+      # ── 11. Publish HTML report to GitHub Pages ───────────────────
+      - name: 🚀  Deploy HTML Report to Latest
         if: always()
         uses: JamesIves/github-pages-deploy-action@v4
         with:
+          folder: Test_Results/HTML
           branch: gh-pages
-          folder: fluentvoice-appium/artifacts/reports
-          target-folder: reports/android/latest
-          commit-message: "deploy: publish latest Android Appium execution reports"
+          target-folder: reports/latest
           clean: false
+
+      - name: 🚀  Deploy HTML Report to History
+        if: always()
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: Test_Results/HTML
+          branch: gh-pages
+          target-folder: reports/history/build-${{ github.run_number }}
+          clean: false
+
+      # ── 12. Write GitHub Action Summary ──────────────────────────
+      - name: 📝  Write Step Summary
+        if: always()
+        run: |
+          cat "${{ github.workspace }}/Test_Results/Summary/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          cd "${{ github.workspace }}/fluentvoice-appium"
+          node utils/generateSummary.js || true

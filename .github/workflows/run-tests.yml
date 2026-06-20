@@ -281,3 +281,6 @@ jobs:
           else
             echo "⚠️ Web security executive summary not found — skipping gate."
           fi
+
+# Trigger deployment of Pages natively via workflow actions
+

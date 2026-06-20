@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Move to the project directory relative to this script
+cd "$(dirname "$0")/.."
+
 # Create reports directory early to prevent GHA deploy step crash
 mkdir -p artifacts/reports
 

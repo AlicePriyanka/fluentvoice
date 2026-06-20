@@ -104,9 +104,7 @@ jobs:
           avd-name: fluentvoice_avd
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: |
-            cd fluentvoice-appium
-            ./scripts/ci_run_tests.sh
+          script: bash "$GITHUB_WORKSPACE/fluentvoice-appium/scripts/ci_run_tests.sh"
 
       # ── 9. Collect and Standardize Test Results ──────────────────
       - name: 📁  Prepare Test Results Structure

@@ -372,40 +372,40 @@ function generateHtmlReport(results, performance, accessibility, config, runStar
         <p style="color: var(--text-muted);">End-to-End & System Quality Test Suite Results</p>
       </div>
       <div class="meta-info">
-        <p><strong>Environment:</strong> \${config.baseUrl}</p>
-        <p><strong>Date:</strong> \${new Date(runStartedAt).toLocaleString()}</p>
-        <p><strong>Total Duration:</strong> \${(durationTotal / 1000).toFixed(2)} seconds</p>
+        <p><strong>Environment:</strong> ${config.baseUrl}</p>
+        <p><strong>Date:</strong> ${new Date(runStartedAt).toLocaleString()}</p>
+        <p><strong>Total Duration:</strong> ${(durationTotal / 1000).toFixed(2)} seconds</p>
       </div>
     </header>
 
     <div class="dashboard-grid">
       <div class="card">
         <div class="card-title">TOTAL TEST CASES</div>
-        <div class="card-value">\${total}</div>
+        <div class="card-value">${total}</div>
       </div>
       <div class="card">
         <div class="card-title">PASSED TESTS</div>
-        <div class="card-value text-pass">\${pass}</div>
+        <div class="card-value text-pass">${pass}</div>
       </div>
       <div class="card">
         <div class="card-title">FAILED TESTS</div>
-        <div class="card-value text-fail">\${fail}</div>
+        <div class="card-value text-fail">${fail}</div>
       </div>
       <div class="card">
         <div class="card-title">SKIPPED TESTS</div>
-        <div class="card-value text-skip">\${skip}</div>
+        <div class="card-value text-skip">${skip}</div>
       </div>
       <div class="card">
         <div class="card-title">PASS RATE</div>
-        <div class="card-value text-pass">\${passRate}%</div>
+        <div class="card-value text-pass">${passRate}%</div>
       </div>
     </div>
 
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('summary-tab')">Executive Summary</button>
-      <button class="tab-btn" onclick="showTab('detailed-tab')">Detailed Results (\${total})</button>
-      <button class="tab-btn" onclick="showTab('perf-tab')">Performance Metrics (\${performance.length})</button>
-      <button class="tab-btn" onclick="showTab('a11y-tab')">Accessibility Audits (\${accessibility.length})</button>
+      <button class="tab-btn" onclick="showTab('detailed-tab')">Detailed Results (${total})</button>
+      <button class="tab-btn" onclick="showTab('perf-tab')">Performance Metrics (${performance.length})</button>
+      <button class="tab-btn" onclick="showTab('a11y-tab')">Accessibility Audits (${accessibility.length})</button>
     </div>
 
     <!-- SUMMARY TAB -->
@@ -422,7 +422,7 @@ function generateHtmlReport(results, performance, accessibility, config, runStar
           </tr>
         </thead>
         <tbody>
-          \${categoryRowsHtml}
+          ${categoryRowsHtml}
         </tbody>
       </table>
     </div>
@@ -441,7 +441,7 @@ function generateHtmlReport(results, performance, accessibility, config, runStar
           </tr>
         </thead>
         <tbody>
-          \${testRowsHtml}
+          ${testRowsHtml}
         </tbody>
       </table>
     </div>
@@ -461,7 +461,7 @@ function generateHtmlReport(results, performance, accessibility, config, runStar
           </tr>
         </thead>
         <tbody>
-          \${perfRowsHtml}
+          ${perfRowsHtml}
         </tbody>
       </table>
     </div>
@@ -480,7 +480,7 @@ function generateHtmlReport(results, performance, accessibility, config, runStar
           </tr>
         </thead>
         <tbody>
-          \${a11yRowsHtml}
+          ${a11yRowsHtml}
         </tbody>
       </table>
     </div>
